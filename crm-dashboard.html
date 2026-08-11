@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="ar" dir="rtl">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Outreach & Agency CRM Dashboard</title>
+  <!-- Tailwind CSS CDN -->
+  <script src="https://cdn.tailwindcss.com"></script>
+  <!-- FontAwesome Icons -->
+  <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.4.0/css/all.min.css">
+  <style>
+    @import url('https://fonts.googleapis.com/css2?family=Cairo:wght@400;600;700;800&display=swap');
+    body { font-family: 'Cairo', sans-serif; }
+  </style>
+</head>
+<body class="bg-slate-900 text-slate-100 min-h-screen pb-12">
+
+  <!-- Header -->
+  <header class="bg-slate-800 border-b border-slate-700 sticky top-0 z-50">
+    <div class="max-w-7xl mx-auto px-4 py-4 flex justify-between items-center">
+      <div class="flex items-center space-x-3 space-x-reverse">
+        <div class="bg-indigo-600 text-white p-2 rounded-lg font-bold">
+          <i class="fa-solid me-1 fa-chart-line"></i> CRM
+        </div>
+        <h1 class="text-xl font-bold text-white">نظام إدارة وتنفيذ الـ Outbound Sales</h1>
+      </div>
+      <button onclick="openModal()" class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold px-4 py-2 rounded-lg transition flex items-center gap-2 text-sm">
+        <i class="fa-solid fa-plus"></i> إضافة Lead جديد
+      </button>
+    </div>
+  </header>
+
+  <main class="max-w-7xl mx-auto px-4 mt-8">
+
+    <!-- KPI Stats Bar -->
+    <div class="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+        <span class="text-xs text-slate-400 font-semibold block mb-1">إجمالي الـ Leads</span>
+        <span id="stat-total" class="text-2xl font-bold text-white">0</span>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+        <span class="text-xs text-slate-400 font-semibold block mb-1">Qualified Leads</span>
+        <span id="stat-qualified" class="text-2xl font-bold text-emerald-400">0</span>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+        <span class="text-xs text-slate-400 font-semibold block mb-1">Discovery Calls</span>
+        <span id="stat-calls" class="text-2xl font-bold text-amber-400">0</span>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center">
+        <span class="text-xs text-slate-400 font-semibold block mb-1">Deals Closed</span>
+        <span id="stat-closed" class="text-2xl font-bold text-indigo-400">0</span>
+      </div>
+      <div class="bg-slate-800 p-4 rounded-xl border border-slate-700 text-center col-span-2 md:col-span-1">
+        <span class="text-xs text-slate-400 font-semibold block mb-1">معدل التحويل</span>
+        <span id="stat-rate" class="text-2xl font-bold text-sky-400">0%</span>
+      </div>
+    </div>
+
+    <!-- Main Leads Table -->
+    <div class="bg-slate-800 rounded-2xl border border-slate-700 shadow-xl overflow-hidden">
+      <div class="p-4 border-b border-slate-700 flex flex-wrap justify-between items-center gap-4">
+        <h2 class="text-lg font-bold text-white flex items-center gap-2">
+          <i class="fa-solid fa-users text-indigo-400"></i> قائمة الـ Leads والمتابعة
+        </h2>
+        <div class="flex items-center gap-2">
+          <input type="text" id="searchInput" onkeyup="filterLeads()" placeholder="بحث باسم الـ Lead..." class="bg-slate-900 border border-slate-700 text-sm rounded-lg px-3 py-1.5 focus:outline-none focus:border-indigo-500 text-white">
+        </div>
+      </div>
+
+      <div class="overflow-x-auto">
+        <table class="w-full text-sm text-right text-slate-300">
+          <thead class="bg-slate-900/60 text-slate-400 text-xs uppercase border-b border-slate-700">
+            <tr>
+              <th class="px-4 py-3">الاسم والبيانات</th>
+              <th class="px-4 py-3">المجال / المصدر</th>
+              <th class="px-4 py-3">Checklist التأهيل</th>
+              <th class="px-4 py-3">الحالة / Stage</th>
+              <th class="px-4 py-3">مرحلة التواصل</th>
+              <th class="px-4 py-3">تفاصيل الخدمة & الدفع</th>
+              <th class="px-4 py-3 text-center">الإجراءات</th>
+            </tr>
+          </thead>
+          <tbody id="leadsTableBody" class="divide-y divide-slate-700/50">
+            <!-- Table content dynamically loaded -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+  </main>
+
+  <!-- Add/Edit Lead Modal -->
+  <div id="leadModal" class="fixed inset-0 bg-black/70 backdrop-blur-sm hidden z-50 flex justify-center items-center p-4 overflow-y-auto">
+    <div class="bg-slate-800 border border-slate-700 w-full max-w-2xl rounded-2xl p-6 shadow-2xl my-8">
+      <div class="flex justify-between items-center mb-6 border-b border-slate-700 pb-3">
+        <h3 id="modalTitle" class="text-lg font-bold text-white">إضافة Lead جديد</h3>
+        <button onclick="closeModal()" class="text-slate-400 hover:text-white"><i class="fa-solid fa-xmark text-xl"></i></button>
+      </div>
+
+      <form id="leadForm" onsubmit="saveLead(event)" class="space-y-4">
+        <input type="hidden" id="leadId">
+        
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">اسم العميل / Founder Name *</label>
+            <input type="text" id="name" required class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">المجال / Industry *</label>
+            <input type="text" id="niche" required placeholder="مثال: أثاث، طب، موضة..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">رابط التواصل / Social Media Link *</label>
+            <input type="url" id="socialLink" required placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500">
+          </div>
+          <div>
+            <label class="block text-xs font-semibold text-slate-400 mb-1">مصدر الـ Lead / Source *</label>
+            <select id="source" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500">
+              <option value="Instagram">Instagram</option>
+              <option value="LinkedIn">LinkedIn</option>
+              <option value="Facebook">Facebook</option>
+              <option value="TikTok">TikTok</option>
+              <option value="Other">آخر</option>
+            </select>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-700 pt-4 mt-4">
+          <h4 class="text-xs font-bold text-indigo-400 mb-2 uppercase">تحديث حالة التواصل والصفقة</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">حالة الـ Outreach</label>
+              <select id="outreachStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white">
+                <option value="لم يتم التواصل">لم يتم التواصل</option>
+                <option value="تم إرسال Loom">تم إرسال Loom</option>
+                <option value="تم الرد">تم الرد</option>
+                <option value="تم تحديد Follow up">تم تحديد Follow up</option>
+                <option value="حجز Discovery Call">حجز Discovery Call</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">حالة الصفقة / Deal Status</label>
+              <select id="dealStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white">
+                <option value="قيد التفاوض">قيد التفاوض</option>
+                <option value="تم إغلاق الصفقة (Closed Deal)">تم إغلاق الصفقة (Closed Deal)</option>
+                <option value="صفقة ملغاة (Lost)">صفقة ملغاة (Lost)</option>
+              </select>
+            </div>
+          </div>
+        </div>
+
+        <div class="border-t border-slate-700 pt-4 mt-4">
+          <h4 class="text-xs font-bold text-indigo-400 mb-2 uppercase">الخدمات والحالة المالية</h4>
+          <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">الباقة / الخدمة</label>
+              <select id="packageType" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white">
+                <option value="لم تحدد بعد">لم تحدد بعد</option>
+                <option value="Full Package (Strategy + Edit + Production)">Full Package (استراتيجية + مونتاج + إنتاج)</option>
+                <option value="Strategy & Plan Only">Strategy & Plan Only (استراتيجية فقط)</option>
+                <option value="Edit Only">Edit Only (مونتاج فقط)</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">حالة الدفع</label>
+              <select id="paymentStatus" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white">
+                <option value="لم يدفع">لم يدفع</option>
+                <option value="دفع (تم الاستلام)">دفع (تم الاستلام)</option>
+                <option value="دفع جزئي / دفعة أولى">دفع جزئي / دفعة أولى</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">طريقة الدفع</label>
+              <select id="paymentMethod" class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white">
+                <option value="N/A">غير محدد</option>
+                <option value="InstaPay">InstaPay</option>
+                <option value="Vodafone Cash">Vodafone Cash</option>
+                <option value="Visa / Bank Transfer">Visa / Bank Transfer</option>
+              </select>
+            </div>
+            <div>
+              <label class="block text-xs font-semibold text-slate-400 mb-1">رابط إثبات الدفع (Screenshot / Receipt URL)</label>
+              <input type="url" id="receiptUrl" placeholder="https://..." class="w-full bg-slate-900 border border-slate-700 rounded-lg p-2.5 text-sm text-white focus:border-indigo-500">
+            </div>
+          </div>
+        </div>
+
+        <div class="flex justify-end gap-3 pt-4 border-t border-slate-700">
+          <button type="button" onclick="closeModal()" class="px-4 py-2 bg-slate-700 text-slate-300 rounded-lg hover:bg-slate-600">إلغاء</button>
+          <button type="submit" class="px-6 py-2 bg-indigo-600 text-white font-semibold rounded-lg hover:bg-indigo-500">حفظ البيانات</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <script>
+    // System Data Engine
+    let leads = JSON.parse(localStorage.getItem('agency_crm_leads')) || [];
+
+    // Save to LocalStorage
+    function saveData() {
+      localStorage.setItem('agency_crm_leads', JSON.stringify(leads));
+      renderLeads();
+      updateStats();
+    }
+
+    // Modal Control
+    function openModal(leadId = null) {
+      document.getElementById('leadForm').reset();
+      document.getElementById('leadId').value = '';
+      document.getElementById('modalTitle').innerText = 'إضافة Lead جديد';
+
+      if(leadId) {
+        const lead = leads.find(l => l.id === leadId);
+        if(lead) {
+          document.getElementById('modalTitle').innerText = 'تعديل بيانات الـ Lead';
+          document.getElementById('leadId').value = lead.id;
+          document.getElementById('name').value = lead.name;
+          document.getElementById('niche').value = lead.niche;
+          document.getElementById('socialLink').value = lead.socialLink;
+          document.getElementById('source').value = lead.source;
+          document.getElementById('outreachStatus').value = lead.outreachStatus || 'لم يتم التواصل';
+          document.getElementById('dealStatus').value = lead.dealStatus || 'قيد التفاوض';
+          document.getElementById('packageType').value = lead.packageType || 'لم تحدد بعد';
+          document.getElementById('paymentStatus').value = lead.paymentStatus || 'لم يدفع';
+          document.getElementById('paymentMethod').value = lead.paymentMethod || 'N/A';
+          document.getElementById('receiptUrl').value = lead.receiptUrl || '';
+        }
+      }
+      document.getElementById('leadModal').classList.remove('hidden');
+    }
+
+    function closeModal() {
+      document.getElementById('leadModal').classList.add('hidden');
+    }
+
+    // Save/Update Lead
+    function saveLead(e) {
+      e.preventDefault();
+      const id = document.getElementById('leadId').value;
+      const leadData = {
+        id: id ? id : Date.now().toString(),
+        name: document.getElementById('name').value,
+        niche: document.getElementById('niche').value,
+        socialLink: document.getElementById('socialLink').value,
+        source: document.getElementById('source').value,
+        outreachStatus: document.getElementById('outreachStatus').value,
+        dealStatus: document.getElementById('dealStatus').value,
+        packageType: document.getElementById('packageType').value,
+        paymentStatus: document.getElementById('paymentStatus').value,
+        paymentMethod: document.getElementById('paymentMethod').value,
+        receiptUrl: document.getElementById('receiptUrl').value,
+        checklist: id ? (leads.find(l => l.id === id)?.checklist || {c1: false, c2: false, c3: false}) : {c1: false, c2: false, c3: false},
+        qualified: id ? (leads.find(l => l.id === id)?.qualified || false) : false
+      };
+
+      if(id) {
+        const index = leads.findIndex(l => l.id === id);
+        leads[index] = leadData;
+      } else {
+        leads.push(leadData);
+      }
+
+      saveData();
+      closeModal();
+    }
+
+    // Toggle Qualification Checklist
+    function toggleChecklist(id, checkNum) {
+      const lead = leads.find(l => l.id === id);
+      if(lead) {
+        lead.checklist[checkNum] = !lead.checklist[checkNum];
+        
+        // Auto qualify when all checks are completed
+        const isQualified = lead.checklist.c1 && lead.checklist.c2 && lead.checklist.c3;
+        
+        if(!lead.qualified && isQualified) {
+          lead.qualified = true;
+          triggerNotification(lead);
+        } else if(!isQualified) {
+          lead.qualified = false;
+        }
+
+        saveData();
+      }
+    }
+
+    // Email Notification Trigger (Simulated & Webhook-ready)
+    function triggerNotification(lead) {
+      alert(`🎉 إشعار جديد: الـ Lead [${lead.name}] حقق جميع معايير الـ Qualified Lead وتم نقله تلقائياً إلى قائمة الـ Qualified!`);
+      // ملاحظة: يمكنك هنا ربط Webhook بإرسال إيميل مباشر عبر Make/n8n أو EmailJS
+    }
+
+    // Delete Lead
+    function deleteLead(id) {
+      if(confirm('هل أنت تأكد من حذف هذا الـ Lead؟')) {
+        leads = leads.filter(l => l.id !== id);
+        saveData();
+      }
+    }
+
+    // Render Table
+    function renderLeads(filteredLeads = null) {
+      const data = filteredLeads || leads;
+      const tbody = document.getElementById('leadsTableBody');
+      tbody.innerHTML = '';
+
+      if(data.length === 0) {
+        tbody.innerHTML = `<tr><td colspan="7" class="text-center py-8 text-slate-500">لا توجد بيانات حالياً. اضغط على "إضافة Lead جديد" للبدء.</td></tr>`;
+        return;
+      }
+
+      data.forEach(lead => {
+        const isQualified = lead.qualified;
+        const tr = document.createElement('tr');
+        tr.className = `hover:bg-slate-700/30 transition ${isQualified ? 'bg-emerald-950/20' : ''}`;
+
+        tr.innerHTML = `
+          <td class="px-4 py-3">
+            <div class="font-bold text-white">${lead.name}</div>
+            <a href="${lead.socialLink}" target="_blank" class="text-xs text-indigo-400 hover:underline flex items-center gap-1 mt-0.5">
+              <i class="fa-solid fa-arrow-up-right-from-square text-[10px]"></i> فتح الحساب
+            </a>
+          </td>
+          <td class="px-4 py-3">
+            <span class="block font-medium">${lead.niche}</span>
+            <span class="inline-block bg-slate-700 text-slate-300 text-[10px] px-2 py-0.5 rounded mt-1">${lead.source}</span>
+          </td>
+          <td class="px-4 py-3">
+            <div class="flex flex-col gap-1 text-xs">
+              <label class="cursor-pointer flex items-center gap-1.5">
+                <input type="checkbox" ${lead.checklist.c1 ? 'checked' : ''} onclick="toggleChecklist('${lead.id}', 'c1')" class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                <span>جمهور ومحتوى مناسب</span>
+              </label>
+              <label class="cursor-pointer flex items-center gap-1.5">
+                <input type="checkbox" ${lead.checklist.c2 ? 'checked' : ''} onclick="toggleChecklist('${lead.id}', 'c2')" class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                <span>صاحب قرار / Founder</span>
+              </label>
+              <label class="cursor-pointer flex items-center gap-1.5">
+                <input type="checkbox" ${lead.checklist.c3 ? 'checked' : ''} onclick="toggleChecklist('${lead.id}', 'c3')" class="rounded border-slate-700 text-indigo-600 focus:ring-0">
+                <span>ميزانية وقدرة شراء</span>
+              </label>
+            </div>
+          </td>
+          <td class="px-4 py-3">
+            ${isQualified 
+              ? `<span class="bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 text-xs px-2.5 py-1 rounded-full font-bold inline-flex items-center gap-1"><i class="fa-solid fa-circle-check"></i> Qualified Lead</span>` 
+              : `<span class="bg-slate-700/50 text-slate-400 text-xs px-2.5 py-1 rounded-full">قيد الفحص</span>`}
+          </td>
+          <td class="px-4 py-3">
+            <span class="block font-semibold text-amber-300 text-xs">${lead.outreachStatus}</span>
+            <span class="text-[11px] text-slate-400">${lead.dealStatus}</span>
+          </td>
+          <td class="px-4 py-3 text-xs">
+            <div class="font-medium text-slate-200">${lead.packageType}</div>
+            <div class="mt-1 flex items-center gap-1">
+              <span class="px-2 py-0.5 rounded text-[10px] ${lead.paymentStatus === 'دفع (تم الاستلام)' ? 'bg-indigo-900 text-indigo-300' : 'bg-slate-700 text-slate-300'}">${lead.paymentStatus}</span>
+              ${lead.paymentMethod !== 'N/A' ? `<span class="text-[10px] text-slate-400">(${lead.paymentMethod})</span>` : ''}
+            </div>
+            ${lead.receiptUrl ? `<a href="${lead.receiptUrl}" target="_blank" class="text-[10px] text-sky-400 hover:underline block mt-0.5"><i class="fa-solid fa-receipt"></i> إثبات التحويل</a>` : ''}
+          </td>
+          <td class="px-4 py-3 text-center">
+            <div class="flex justify-center items-center gap-2">
+              <button onclick="openModal('${lead.id}')" class="p-1.5 bg-slate-700 hover:bg-slate-600 text-slate-200 rounded-lg transition" title="تعديل"><i class="fa-solid fa-pen-to-square"></i></button>
+              <button onclick="deleteLead('${lead.id}')" class="p-1.5 bg-rose-900/50 hover:bg-rose-800 text-rose-300 rounded-lg transition" title="حذف"><i class="fa-solid fa-trash"></i></button>
+            </div>
+          </td>
+        `;
+        tbody.appendChild(tr);
+      });
+    }
+
+    // Update Top Dashboard Stats
+    function updateStats() {
+      const total = leads.length;
+      const qualified = leads.filter(l => l.qualified).length;
+      const calls = leads.filter(l => l.outreachStatus === 'حجز Discovery Call').length;
+      const closed = leads.filter(l => l.dealStatus === 'تم إغلاق الصفقة (Closed Deal)').length;
+      const rate = total > 0 ? Math.round((closed / total) * 100) : 0;
+
+      document.getElementById('stat-total').innerText = total;
+      document.getElementById('stat-qualified').innerText = qualified;
+      document.getElementById('stat-calls').innerText = calls;
+      document.getElementById('stat-closed').innerText = closed;
+      document.getElementById('stat-rate').innerText = `${rate}%`;
+    }
+
+    // Search Filter
+    function filterLeads() {
+      const term = document.getElementById('searchInput').value.toLowerCase();
+      const filtered = leads.filter(l => l.name.toLowerCase().includes(term) || l.niche.toLowerCase().includes(term));
+      renderLeads(filtered);
+    }
+
+    // Initial Launch
+    renderLeads();
+    updateStats();
+  </script>
+</body>
+</html>
